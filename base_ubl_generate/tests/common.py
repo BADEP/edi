@@ -27,8 +27,5 @@ class DummyRecord:
         return None
 
     def __repr__(self):
-        if hasattr(self, "name"):
-            name = self.name
-        else:
-            name = f"{self.__dict__}"
+        name = self.name if hasattr(self, "name") else f"{self.__dict__}"
         return f"<DummyRecord: {name}>"

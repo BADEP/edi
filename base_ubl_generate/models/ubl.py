@@ -132,8 +132,7 @@ class BaseUblGenerate(models.AbstractModel):
 
     @api.model
     def _ubl_get_tax_scheme_dict_from_partner(self, commercial_partner):
-        tax_scheme_dict = {"id": "VAT", "name": False, "type_code": False}
-        return tax_scheme_dict
+        return {"id": "VAT", "name": False, "type_code": False}
 
     @api.model
     def _ubl_add_party_tax_scheme(
@@ -385,14 +384,13 @@ class BaseUblGenerate(models.AbstractModel):
         product_name = False
         seller_code = False
         if product:
-            if type_ == "purchase":
-                if seller:
-                    sellers = product._select_seller(
-                        partner_id=seller, quantity=0.0, date=None, uom_id=False
-                    )
-                    if sellers:
-                        product_name = sellers[0].product_name
-                        seller_code = sellers[0].product_code
+            if type_ == "purchase" and seller:
+                sellers = product._select_seller(
+                    partner_id=seller, quantity=0.0, date=None, uom_id=False
+                )
+                if sellers:
+                    product_name = sellers[0].product_name
+                    seller_code = sellers[0].product_code
             if not seller_code:
                 seller_code = self._ubl_get_seller_code_from_product(product)
             if not product_name:
@@ -439,10 +437,7 @@ class BaseUblGenerate(models.AbstractModel):
             # I'm not 100% sure, but it seems that ClassifiedTaxCategory
             # contains the taxes of the product without taking into
             # account the fiscal position
-            if type_ == "sale":
-                taxes = product.taxes_id
-            else:
-                taxes = product.supplier_taxes_id
+            taxes = product.taxes_id if type_ == "sale" else product.supplier_taxes_id
             skip_taxes = self.env.context.get("ubl_add_item__skip_taxes")
             if taxes and not skip_taxes:
                 for tax in taxes:
@@ -525,8 +520,7 @@ class BaseUblGenerate(models.AbstractModel):
                     tax_name=tax.name,
                 )
             )
-        tax_scheme_dict = {"id": tax.unece_type_code, "name": False, "type_code": False}
-        return tax_scheme_dict
+        return {"id": tax.unece_type_code, "name": False, "type_code": False}
 
     @api.model
     def _ubl_add_tax_scheme(self, tax_scheme_dict, parent_node, ns, version="2.1"):
