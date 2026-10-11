@@ -4,8 +4,8 @@
 
 {
     "name": "Base EDI",
-    "summary": """Base module to aggregate EDI features.""",
-    "version": "19.0.1.0.0",
+    "summary": "Base module to aggregate EDI features.",
+    "version": "20.0.1.0.0",
     "development_status": "Mature",
     "website": "https://github.com/OCA/edi",
     "license": "LGPL-3",
