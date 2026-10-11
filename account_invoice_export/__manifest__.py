@@ -3,7 +3,7 @@
 
 {
     "name": "Account Invoice Export",
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "category": "Invoicing Management",
     "license": "AGPL-3",
     "development_status": "Beta",

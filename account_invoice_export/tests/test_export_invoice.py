@@ -41,7 +41,7 @@ class TestExportAcountInvoice(CommonCase):
 
     def test_get_header(self):
         header = self.invoice_1.transmit_method_id.get_transmission_http_header()
-        self.assertTrue("Authorization" in header.keys())
+        self.assertTrue("Authorization" in header)
 
     @patch("odoo.addons.account_invoice_export.models.account_move.requests.post")
     def test_export_invoice_success(self, mock_post):
