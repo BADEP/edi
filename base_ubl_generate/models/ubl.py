@@ -129,7 +129,6 @@ class BaseUblGenerate(models.AbstractModel):
                     party_identification, ns["cbc"] + "ID", schemeName=scheme_name
                 )
                 party_identification_id.text = party_id_text
-        return
 
     @api.model
     def _ubl_get_tax_scheme_dict_from_partner(self, commercial_partner):
