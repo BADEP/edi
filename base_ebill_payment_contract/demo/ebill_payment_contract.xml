@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo noupdate="1">
-    <record model="ebill.payment.contract" id="ebill_payment_contract_demo_1">
+    <record id="ebill_payment_contract_demo_1" model="ebill.payment.contract">
         <field name="transmit_method_id" ref="account_invoice_transmit_method.mail" />
         <field name="state">draft</field>
         <field name="partner_id" ref="base.res_partner_12" />
     </record>
-    <record model="ebill.payment.contract" id="ebill_payment_contract_demo_2">
+    <record id="ebill_payment_contract_demo_2" model="ebill.payment.contract">
         <field name="transmit_method_id" ref="account_invoice_transmit_method.mail" />
         <field name="state">open</field>
         <field name="partner_id" ref="base.res_partner_12" />
