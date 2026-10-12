@@ -36,7 +36,7 @@ class BusinessDocumentImport(models.AbstractModel):
             record = data_dict["recordset"]
             if isinstance(record, type(model)):
                 return record
-            elif raise_exception:
+            if raise_exception:
                 raise UserError(
                     self.env._(
                         "The record '%(record)s' is an instance of '%(record_model)s', "
@@ -73,7 +73,7 @@ class BusinessDocumentImport(models.AbstractModel):
             if record:
                 if isinstance(record, type(model)):
                     return record
-                elif raise_exception:
+                if raise_exception:
                     raise UserError(
                         self.env._(
                             "The record '%(record)s' is an instance of "
@@ -189,8 +189,8 @@ class BusinessDocumentImport(models.AbstractModel):
                 order=order,
             ):
                 return partner
-        if partner_dict.get("contact"):
-            if partner := rpo.search(
+        if partner_dict.get("contact") and (
+            partner := rpo.search(
                 Domain.AND(
                     [
                         domain,
@@ -199,10 +199,11 @@ class BusinessDocumentImport(models.AbstractModel):
                 ),
                 limit=1,
                 order=order,
-            ):
-                return partner
-        if partner_dict.get("phone"):
-            if partner := rpo.search(
+            )
+        ):
+            return partner
+        if partner_dict.get("phone") and (
+            partner := rpo.search(
                 Domain.AND(
                     [
                         domain,
@@ -216,8 +217,9 @@ class BusinessDocumentImport(models.AbstractModel):
                 ),
                 limit=1,
                 order=order,
-            ):
-                return partner
+            )
+        ):
+            return partner
         return False
 
     @api.model
@@ -243,6 +245,7 @@ class BusinessDocumentImport(models.AbstractModel):
             netloc = urlp.path
         if netloc and len(netloc.split(".")) >= 2:
             return ".".join(netloc.split(".")[-2:])
+        return None
 
     @api.model
     def _match_partner_website(self, partner_dict, chatter_msg, domain, order):
@@ -298,6 +301,7 @@ class BusinessDocumentImport(models.AbstractModel):
                     )
                 )
                 return partner
+        return None
 
     # TODO: maybe we should remove partner_type in future versions
     # and add a company= arg
@@ -599,7 +603,7 @@ class BusinessDocumentImport(models.AbstractModel):
         )
         if bankaccount:
             return bankaccount
-        elif create_if_not_found:
+        if create_if_not_found:
             bank_id = False
             if bic:
                 bic = bic.replace(" ", "").upper()
@@ -626,21 +630,21 @@ class BusinessDocumentImport(models.AbstractModel):
                 )
             )
             return partner_bank
-        else:
-            chatter_msg.append(
-                self.env._(
-                    "The analysis of the business document returned "
-                    "<b>IBAN %(iban)s</b> as bank account, but there is no such "
-                    "bank account in Odoo linked to partner "
-                    "<a href=# data-oe-model=res.partner "
-                    "data-oe-id=%(partner_id)d>%(partner)s</a> and "
-                    "the option to automatically create bank "
-                    "accounts upon import is disabled.",
-                    iban=iban,
-                    partner_id=partner.id,
-                    partner=partner.display_name,
-                )
+        chatter_msg.append(
+            self.env._(
+                "The analysis of the business document returned "
+                "<b>IBAN %(iban)s</b> as bank account, but there is no such "
+                "bank account in Odoo linked to partner "
+                "<a href=# data-oe-model=res.partner "
+                "data-oe-id=%(partner_id)d>%(partner)s</a> and "
+                "the option to automatically create bank "
+                "accounts upon import is disabled.",
+                iban=iban,
+                partner_id=partner.id,
+                partner=partner.display_name,
             )
+        )
+        return None
 
     @api.model
     def _match_product(
@@ -671,7 +675,7 @@ class BusinessDocumentImport(models.AbstractModel):
         product = self._match_product_search(product_dict)
         if product:
             return product
-        elif seller:
+        if seller:
             # WARNING: Won't work for multi-variant products
             # because product.supplierinfo is attached to product template
             sinfo = self.env["product.supplierinfo"].search(
@@ -767,33 +771,31 @@ class BusinessDocumentImport(models.AbstractModel):
             currency = rco.search(Domain("name", "=", currency_iso), limit=1)
             if currency:
                 return currency
-            else:
-                self.user_error_wrap(
-                    "_match_currency",
-                    currency_dict,
-                    self.env._(
-                        "The analysis of the business document returned '%(code)s' as "
-                        "the currency ISO code. But there are no currency "
-                        "with that code in Odoo.",
-                        code=currency_iso,
-                    ),
-                    chatter_msg,
-                    raise_exception,
-                )
+            self.user_error_wrap(
+                "_match_currency",
+                currency_dict,
+                self.env._(
+                    "The analysis of the business document returned '%(code)s' as "
+                    "the currency ISO code. But there are no currency "
+                    "with that code in Odoo.",
+                    code=currency_iso,
+                ),
+                chatter_msg,
+                raise_exception,
+            )
         if currency_dict.get("symbol"):
             currencies = rco.search(Domain("symbol", "=", currency_dict["symbol"]))
             if len(currencies) == 1:
                 return currencies
-            else:
-                chatter_msg.append(
-                    self.env._(
-                        "The analysis of the business document returned "
-                        "'%(symbol)s' as the currency symbol. "
-                        "But there are none or several "
-                        "currencies with that symbol in Odoo.",
-                        symbol=currency_dict["symbol"],
-                    )
+            chatter_msg.append(
+                self.env._(
+                    "The analysis of the business document returned "
+                    "'%(symbol)s' as the currency symbol. "
+                    "But there are none or several "
+                    "currencies with that symbol in Odoo.",
+                    symbol=currency_dict["symbol"],
                 )
+            )
         if currency_dict.get("iso_or_symbol"):
             currencies = rco.search(
                 Domain.OR(
@@ -805,20 +807,19 @@ class BusinessDocumentImport(models.AbstractModel):
             )
             if len(currencies) == 1:
                 return currencies[0]
-            else:
-                self.user_error_wrap(
-                    "_match_currency",
-                    currency_dict,
-                    self.env._(
-                        "The analysis of the business document "
-                        "returned '%(code)s' as the currency symbol or ISO code. "
-                        "But there are none or several currencies "
-                        "with the symbol/ISO code in Odoo.",
-                        code=currency_dict["iso_or_symbol"],
-                    ),
-                    chatter_msg,
-                    raise_exception,
-                )
+            self.user_error_wrap(
+                "_match_currency",
+                currency_dict,
+                self.env._(
+                    "The analysis of the business document "
+                    "returned '%(code)s' as the currency symbol or ISO code. "
+                    "But there are none or several currencies "
+                    "with the symbol/ISO code in Odoo.",
+                    code=currency_dict["iso_or_symbol"],
+                ),
+                chatter_msg,
+                raise_exception,
+            )
         if currency_dict.get("country_code"):
             country_code = currency_dict["country_code"]
             country = self.env["res.country"].search(
@@ -827,21 +828,20 @@ class BusinessDocumentImport(models.AbstractModel):
             if country:
                 if country.currency_id:
                     return country.currency_id
-                else:
-                    self.user_error_wrap(
-                        "_match_currency",
-                        currency_dict,
-                        self.env._(
-                            "The analysis of the business document "
-                            "returned '%(code)s' as the country code to find "
-                            "the related currency. But the country '%(name)s'"
-                            "doesn't have any related currency configured in Odoo.",
-                            code=country_code,
-                            name=country.name,
-                        ),
-                        chatter_msg,
-                        raise_exception,
-                    )
+                self.user_error_wrap(
+                    "_match_currency",
+                    currency_dict,
+                    self.env._(
+                        "The analysis of the business document "
+                        "returned '%(code)s' as the country code to find "
+                        "the related currency. But the country '%(name)s'"
+                        "doesn't have any related currency configured in Odoo.",
+                        code=country_code,
+                        name=country.name,
+                    ),
+                    chatter_msg,
+                    raise_exception,
+                )
             else:
                 self.user_error_wrap(
                     "_match_currency",
@@ -1303,6 +1303,7 @@ class BusinessDocumentImport(models.AbstractModel):
             chatter_msg,
             raise_exception,
         )
+        return None
 
     def _prepare_analytic_account_speed_dict(self, company=None):
         if company is None:
@@ -1364,6 +1365,7 @@ class BusinessDocumentImport(models.AbstractModel):
             chatter_msg,
             raise_exception,
         )
+        return None
 
     def _prepare_journal_speed_dict(self, company=None):
         if company is None:
@@ -1425,6 +1427,7 @@ class BusinessDocumentImport(models.AbstractModel):
             chatter_msg,
             raise_exception,
         )
+        return None
 
     # Code moved from base_business_document_import_stock
     # Now that the incoterm obj (account.incoterms) is defined in
@@ -1450,18 +1453,16 @@ class BusinessDocumentImport(models.AbstractModel):
             )
             if incoterm:
                 return incoterm
-            else:
-                self.user_error_wrap(
-                    "_match_incoterm",
-                    incoterm_dict,
-                    self.env._(
-                        "Could not find any Incoterm in Odoo "
-                        "corresponding to '%(code)s'",
-                        code=incoterm_dict["code"],
-                    ),
-                    chatter_msg,
-                    raise_exception,
-                )
+            self.user_error_wrap(
+                "_match_incoterm",
+                incoterm_dict,
+                self.env._(
+                    "Could not find any Incoterm in Odoo corresponding to '%(code)s'",
+                    code=incoterm_dict["code"],
+                ),
+                chatter_msg,
+                raise_exception,
+            )
         return False
 
     @api.model
