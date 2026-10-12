@@ -96,7 +96,7 @@ class BaseUbl(models.AbstractModel):
             and zip_xpath[0].text.replace(" ", "")
             or False
         )
-        address_dict = {
+        return {
             "street": street_xpath and street_xpath[0].text or False,
             "street_number": street_number_xpath
             and street_number_xpath[0].text
@@ -107,15 +107,11 @@ class BaseUbl(models.AbstractModel):
             "state_code": state_code,
             "country_code": country_code,
         }
-        return address_dict
 
     @api.model
     def ubl_parse_delivery(self, delivery_node, ns):
         party_xpath = delivery_node.xpath("cac:DeliveryParty", namespaces=ns)
-        if party_xpath:
-            partner_dict = self.ubl_parse_party(party_xpath[0], ns)
-        else:
-            partner_dict = {}
+        partner_dict = self.ubl_parse_party(party_xpath[0], ns) if party_xpath else {}
         postal_xpath = delivery_node.xpath(
             "cac:DeliveryParty/cac:PostalAddress", namespaces=ns
         )
@@ -148,8 +144,7 @@ class BaseUbl(models.AbstractModel):
     def ubl_parse_incoterm(self, delivery_term_node, ns):
         incoterm_xpath = delivery_term_node.xpath("cbc:ID", namespaces=ns)
         if incoterm_xpath:
-            incoterm_dict = {"code": incoterm_xpath[0].text}
-            return incoterm_dict
+            return {"code": incoterm_xpath[0].text}
         return {}
 
     def ubl_parse_product(self, line_node, ns):
@@ -160,8 +155,7 @@ class BaseUbl(models.AbstractModel):
         code_xpath = line_node.xpath(
             "cac:Item/cac:SellersItemIdentification/cbc:ID", namespaces=ns
         )
-        product_dict = {
+        return {
             "barcode": barcode_xpath and barcode_xpath[0].text or False,
             "code": code_xpath and code_xpath[0].text or False,
         }
-        return product_dict
